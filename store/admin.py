@@ -1,5 +1,5 @@
 from typing import Any, List, Optional, Tuple
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from . import models
@@ -10,7 +10,7 @@ from django.urls import reverse
 # Register your models here.
 
 class InventoryFilter(admin.SimpleListFilter):
-    title = 'iventory'
+    title = 'inventory'
     parameter_name = 'inventory'
 
     def lookups(self, request, model_admin):
@@ -24,6 +24,12 @@ class InventoryFilter(admin.SimpleListFilter):
 
 @admin.register(models.Product)
 class ProductAdmin(admin.ModelAdmin):
+    #fields=['title','slug']
+    autocomplete_fields=['collection']
+    prepopulated_fields={
+         'slug' : ['title']
+    }
+    actions=['clear_inventory']
     list_display = ['title', 'unit_price','inventory_status','collection_title']
     list_editable=['unit_price']
     list_per_page=10
@@ -38,15 +44,27 @@ class ProductAdmin(admin.ModelAdmin):
         if product.inventory < 10:
             return 'Low'
         return 'OK'
+    
+    @admin.action(description='Clear inventory')
+    def clear_inventory(self,request,queryset):
+        updated_count = queryset.update(inventory=0)
+        self.message_user(
+            request,
+            f'{updated_count} products were successfully update',
+            messages.ERROR 
+        )
+         
             
 
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
+    
     search_fields=['first_name__istartswith','last_name__istartswith']
     list_display = ['first_name', 'last_name','membership','orders_count']
     list_editable=['membership']
     ordering=['first_name', 'last_name']
     list_per_page=10
+    
 
     @admin.display(ordering='orders_count')
     def orders_count(self, customer):
@@ -66,12 +84,14 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(models.Order)
 class OrderAdmin(admin.ModelAdmin):
+    autocomplete_fields=['customer']
     list_display = ['id', 'placed_at','customer']
     
 
 @admin.register(models.Collection)
 class CollectionAdmin(admin.ModelAdmin):
     list_display=['title', 'products_count']
+    search_fields=['title']
     @admin.display(ordering='products_count')
     def products_count(self, collection):
             url = (
