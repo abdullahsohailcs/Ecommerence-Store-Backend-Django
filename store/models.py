@@ -8,6 +8,12 @@ class Collection(models.Model):
     title = models.CharField(max_length=255)
     featured_product=models.ForeignKey('Product',on_delete=models.SET_NULL,null=True,related_name='+')
 
+    def __str__(self) -> str:
+        return self.title
+    
+    class Meta:
+        ordering = ['title']
+
 # Create your models here.
 class Product(models.Model):
     title = models.CharField(max_length=255)
@@ -19,6 +25,12 @@ class Product(models.Model):
     last_update = models.DateTimeField(auto_now=True)
     collection = models.ForeignKey(Collection,on_delete=models.PROTECT)
     promotions = models.ManyToManyField(Promotion)
+
+    def __str__(self) -> str:
+        return self.title
+    
+    class Meta:
+        ordering = ['title']
 
 
 class Customer(models.Model):
@@ -39,6 +51,8 @@ class Customer(models.Model):
     birth_day=models.DateField(null=True)
     # B,S,G
     membership=models.CharField(max_length=1,choices=MEMBERSHIP_CHOICES,default=MEMBERSHIP_BRONZE)
+
+
    
     
 
