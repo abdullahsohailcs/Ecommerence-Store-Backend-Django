@@ -2,12 +2,17 @@ from typing import Any, List, Optional, Tuple
 from django.contrib import admin, messages
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
+from tags.models import TaggedItem
 from . import models
 from django.db.models.aggregates import Count,Min,Max,Avg, Sum
 from django.utils.html import format_html, urlencode
 from django.urls import reverse
+from django.contrib.contenttypes.admin import GenericTabularInline
+
+
 
 # Register your models here.
+
 
 class InventoryFilter(admin.SimpleListFilter):
     title = 'inventory'
@@ -26,6 +31,7 @@ class InventoryFilter(admin.SimpleListFilter):
 class ProductAdmin(admin.ModelAdmin):
     #fields=['title','slug']
     autocomplete_fields=['collection']
+    search_fields=['title']
     prepopulated_fields={
          'slug' : ['title']
     }
@@ -81,9 +87,17 @@ class CustomerAdmin(admin.ModelAdmin):
         return super().get_queryset(request).annotate(
             orders_count = Count('order')
         )
+    
+class OrderItemInline(admin.TabularInline):
+     autocomplete_fields=['product']
+     model = models.OrderItem
+     extra=0
+     min_num=1
+     max_num=10
 
 @admin.register(models.Order)
 class OrderAdmin(admin.ModelAdmin):
+    inlines=[OrderItemInline]
     autocomplete_fields=['customer']
     list_display = ['id', 'placed_at','customer']
     
